@@ -1,0 +1,36 @@
+name: Task
+description: Something the maintainer has decided should happen.
+type: Task
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What should be true when this is done
+      description: The result, in a sentence or two. Not the steps.
+    validations:
+      required: true
+  - type: textarea
+    id: check
+    attributes:
+      label: How we will know
+      description: The command or check that shows it is done.
+    validations:
+      required: true
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      options:
+        - 0 Setup
+        - 1 Cut
+        - 2 Split and evals
+        - 3 Claims and release
+        - Later
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+    validations:
+      required: false

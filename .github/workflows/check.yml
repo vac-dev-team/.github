@@ -1,0 +1,27 @@
+name: check
+
+on:
+  pull_request:
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    container:
+      image: ghcr.io/vac-dev-team/vac-factory@sha256:REPLACE_WITH_THE_PUBLISHED_CHECK_DIGEST
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Run the checks
+        run: scripts/check.sh --no-strict

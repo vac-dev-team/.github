@@ -1,0 +1,67 @@
+name: Break
+description: An evaluation run found something getting through the containment.
+title: "Break: "
+type: Break
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A break is something a run observed, not a suspicion. Attach the run record.
+        For a vulnerability you want kept private, use the security policy instead.
+  - type: input
+    id: eval
+    attributes:
+      label: Evaluation
+      description: Which evaluation or red-team pack, and which task in it.
+      placeholder: "redteam pack, task notes_to_unlisted_host"
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Commit tested
+      description: The full commit of the build that was contained.
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: What got through
+      options:
+        - Reached a host outside the policy
+        - A credential or the canary left the sandbox
+        - Escaped the sandbox
+        - Authority came back without an operator reset
+        - Blocked something the policy grants
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happened
+      description: What the contained program attempted and what the gate decided. One or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: The exact command, the policy file and any seed.
+      render: shell
+    validations:
+      required: true
+  - type: upload
+    id: record
+    attributes:
+      label: Run record
+      description: The run record file from that run. Remove any secrets first.
+    validations:
+      required: true
+  - type: input
+    id: machine
+    attributes:
+      label: Where it ran
+      description: Platform and machine kind, for example WSL2 on the test box.
+    validations:
+      required: false
