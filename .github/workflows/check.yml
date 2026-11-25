@@ -16,12 +16,68 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     container:
-      image: ghcr.io/vac-dev-team/vac-factory@sha256:REPLACE_WITH_THE_PUBLISHED_CHECK_DIGEST
+      image: ghcr.io/vac-dev-team/vac-factory@sha256:4013a55ac308338b7ed12b8d0723bdfcaf2258da0ee9a82e1b794d1f4366e8fc
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-          fetch-depth: 0
-
       - name: Run the checks
-        run: scripts/check.sh --no-strict
+        run: scripts/check.sh
+
+  proofs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    container:
+      image: ghcr.io/vac-dev-team/vac-factory@sha256:c6e486c2d23cc12a4a8c59fbec289c3cb3aaa20a242de91af643a5f1489d684b
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Recheck the proofs with Lean
+        run: scripts/verdict.sh
+
+  faults:
+    name: faults (${{ matrix.fault }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    container:
+      image: ghcr.io/vac-dev-team/vac-factory@sha256:4013a55ac308338b7ed12b8d0723bdfcaf2258da0ee9a82e1b794d1f4366e8fc
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - fault: broken-law
+            apply: sed -i 's/Nat.is_lt(counter, n)/Nat.is_le(counter, n)/' formal/kernel.bend
+          - fault: sabotage-by-default
+            apply: sed -i 's/^default = \[\]$/default = ["sabotage"]/' crates/containment-host/Cargo.toml
+          - fault: impure-kernel
+            apply: echo 'extern crate std;' >> crates/containment-kernel/src/lib.rs
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Seed the fault
+        shell: bash
+        env:
+          APPLY: ${{ matrix.apply }}
+        run: |
+          bash -euo pipefail -c "$APPLY"
+          if git diff --quiet; then
+            echo "::error::the fault changed nothing; update it in the .github repository's check.yml"
+            exit 1
+          fi
+          git diff --stat
+      - name: The checks must refuse it
+        shell: bash
+        run: |
+          code=0
+          scripts/check.sh || code=$?
+          if [ "$code" = 0 ]; then
+            echo "::error::scripts/check.sh passed with a seeded fault in the checkout"
+            exit 1
+          fi
+          if [ "$code" = 2 ]; then
+            echo "::error::scripts/check.sh could not run (exit 2), so the fault was not judged"
+            exit 1
+          fi
+          echo "refused, exit $code"
